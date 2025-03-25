@@ -4,6 +4,16 @@ from email_utils import send_booking_email
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # или ["https://kuks-booking.vercel.app"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class BookingData(BaseModel):
     first_name: str
     last_name: str
