@@ -29,3 +29,7 @@ def process_payment(booking: BookingData):
 
     send_booking_email(booking)
     return { "status": "success" }
+
+@app.get("/")
+def root():
+    return {"status": "Backend is running"}
