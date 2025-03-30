@@ -45,6 +45,7 @@ class Car(Base):
     id = Column(Integer, primary_key=True, index=True)
     brand = Column(String)
     model = Column(String)
+    color = Column(String)  # новый параметр
     seats = Column(Integer)
     price_per_day = Column(Float)
     image_url = Column(String)
