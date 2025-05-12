@@ -12,7 +12,7 @@ def send_booking_email(booking):
 
 Экскурсия: {booking.excursion_title}
 Дата: {booking.date}
-Имя: {booking.first_name} {booking.last_name}
+Имя: {booking.firstName} {booking.lastName}
 Телефон: {booking.phone}
 Email: {booking.email}
 Документ: {booking.document_number}

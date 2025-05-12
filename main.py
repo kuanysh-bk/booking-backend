@@ -56,6 +56,10 @@ def process_payment(booking: BookingData, db: Session = Depends(get_db)):
     db.add(booking_entry)
     db.commit()
     db.refresh(booking_entry)
+    
+    from email_sender import send_booking_email  # импорт функции (если в отдельном файле)
+    send_booking_email(booking)
+
     return {"status": "success", "booking_id": booking_entry.booking_id}
 
 @app.get("/operators")
