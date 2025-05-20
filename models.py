@@ -30,9 +30,11 @@ class Excursion(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    description = Column(String)
+    description_en = Column(String)
+    description_ru = Column(String)
     duration = Column(String)
-    location = Column(String)
+    location_en = Column(String)
+    location_ru = Column(String)
     price = Column(Float)
     image_urls = Column(String)
     operator_id = Column(Integer, ForeignKey("tour_operators.id"))
