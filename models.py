@@ -36,6 +36,9 @@ class Excursion(Base):
     location_en = Column(String)
     location_ru = Column(String)
     price = Column(Float)
+    adult_price = Column(Float)
+    child_price = Column(Float)
+    infant_price = Column(Float)
     image_urls = Column(String)
     operator_id = Column(Integer, ForeignKey("tour_operators.id"))
 
