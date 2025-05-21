@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models import ConfirmedBooking, TourOperator, Excursion, Car
+from models import ConfirmedBooking, TourOperator, Excursion, Car, CarReservation, ExcursionReservation
 from datetime import datetime
 
 app = FastAPI()
@@ -77,3 +77,7 @@ def get_cars(db: Session = Depends(get_db)):
 @app.get("/bookings")
 def get_bookings(db: Session = Depends(get_db)):
     return db.query(ConfirmedBooking).all()
+
+@app.get("/excursion-reservations")
+def get_excursion_reservations(excursion_id: int, db: Session = Depends(get_db)):
+    return db.query(ExcursionReservation).filter(ExcursionReservation.excursion_id == excursion_id).all()
