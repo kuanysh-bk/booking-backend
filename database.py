@@ -22,5 +22,5 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Автоматическое создание таблиц при запуске
-from models import ConfirmedBooking, TourOperator, Excursion, Car, CarReservation, ExcursionReservation
+from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation
 Base.metadata.create_all(bind=engine)
