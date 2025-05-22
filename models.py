@@ -13,17 +13,25 @@ class ConfirmedBooking(Base):
     date = Column(Date)
     total_price = Column(Float)
     pickup_location = Column(String)
+    supplier_id = Column(Integer, ForeignKey("suppliers.id"))
+    booking_type = Column(String)  # "excursion" или "car"
+    car_id = Column(Integer, ForeignKey("cars.id"), nullable=True)  # добавлено
 
-class TourOperator(Base):
-    __tablename__ = "tour_operators"
+    supplier = relationship("Supplier")
+
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     phone = Column(String)
     email = Column(String)
     logo_url = Column(String)
+    supplier_type = Column(String, nullable=False)  # "excursion", "car", или "both"
 
     excursions = relationship("Excursion", back_populates="operator")
+    cars = relationship("Car", back_populates="supplier")
 
 class Excursion(Base):
     __tablename__ = "excursions"
@@ -40,9 +48,9 @@ class Excursion(Base):
     child_price = Column(Float)
     infant_price = Column(Float)
     image_urls = Column(String)
-    operator_id = Column(Integer, ForeignKey("tour_operators.id"))
+    operator_id = Column(Integer, ForeignKey("suppliers.id"))
 
-    operator = relationship("TourOperator", back_populates="excursions")
+    operator = relationship("Supplier", back_populates="excursions")
 
 class Car(Base):
     __tablename__ = "cars"
@@ -50,13 +58,22 @@ class Car(Base):
     id = Column(Integer, primary_key=True, index=True)
     brand = Column(String)
     model = Column(String)
-    color = Column(String)  # новый параметр
+    color = Column(String)
     seats = Column(Integer)
     price_per_day = Column(Float)
     image_url = Column(String)
     car_type = Column(String)
     transmission = Column(String)
     has_air_conditioning = Column(Boolean)
+
+    year = Column(Integer)  # Год выпуска
+    fuel_type = Column(String)  # бензин, газ, электричество
+    engine_capacity = Column(Float)  # в литрах
+    mileage = Column(Integer)  # пробег в км
+    drive_type = Column(String)  # полный, передний, задний
+
+    supplier_id = Column(Integer, ForeignKey("suppliers.id"))
+    supplier = relationship("Supplier", back_populates="cars")
 
 class CarReservation(Base):
     __tablename__ = "car_reservations"
