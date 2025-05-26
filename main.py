@@ -32,7 +32,7 @@ class BookingData(BaseModel):
     phone: str
     contact_method: str
     email: str | None = None
-    document_number: str
+    document_number: str | None = None
     language: str
     adults: int
     children: int
@@ -48,6 +48,8 @@ class BookingData(BaseModel):
 
 @app.post("/api/pay")
 def process_payment(booking: BookingData, db: Session = Depends(get_db)):
+    print(">>> Получен payload:")
+    print(booking.dict())
     booking_entry = ConfirmedBooking(
         booking_id=int(datetime.utcnow().timestamp()),
         contact_method=booking.contact_method,
