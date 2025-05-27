@@ -144,3 +144,17 @@ def get_car_reservations(car_id: int, db: Session = Depends(get_db)):
             current += timedelta(days=1)
 
     return dates
+
+@app.get("/cars/{car_id}")
+def get_car(car_id: int, db: Session = Depends(get_db)):
+    car = db.query(Car).options(joinedload(Car.supplier)).filter(Car.id == car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    return {
+        "id": car.id,
+        "brand": car.brand,
+        "model": car.model,
+        "price_per_day": car.price_per_day,
+        "supplier_id": car.supplier_id,
+        "supplier": {"id": car.supplier.id, "name": car.supplier.name} if car.supplier else None
+    }
