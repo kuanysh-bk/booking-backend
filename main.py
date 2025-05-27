@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from database import SessionLocal, engine
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation
 from datetime import datetime
@@ -81,7 +81,31 @@ def get_excursions(operator_id: int, db: Session = Depends(get_db)):
 
 @app.get("/cars")
 def get_cars(db: Session = Depends(get_db)):
-    return db.query(Car).all()
+    cars = db.query(Car).options(joinedload(Car.supplier)).all()
+    result = []
+    for car in cars:
+        result.append({
+            "id": car.id,
+            "brand": car.brand,
+            "model": car.model,
+            "color": car.color,
+            "seats": car.seats,
+            "price_per_day": car.price_per_day,
+            "image_url": car.image_url,
+            "car_type": car.car_type,
+            "transmission": car.transmission,
+            "has_air_conditioning": car.has_air_conditioning,
+            "year": car.year,
+            "fuel_type": car.fuel_type,
+            "engine_capacity": car.engine_capacity,
+            "mileage": car.mileage,
+            "drive_type": car.drive_type,
+            "supplier": {
+                "id": car.supplier.id,
+                "name": car.supplier.name
+            } if car.supplier else None
+        })
+    return result
 
 @app.get("/bookings")
 def get_bookings(db: Session = Depends(get_db)):
