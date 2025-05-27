@@ -33,10 +33,10 @@ class BookingData(BaseModel):
     contact_method: str
     email: str | None = None
     document_number: str | None = None
-    language: str
-    adults: int
-    children: int
-    infants: int
+    language: str | None = None
+    adults: int | None = None
+    children: int | None = None
+    infants: int | None = None
     excursion_title: str | None = None
     date: str
     start_date: str | None = None
