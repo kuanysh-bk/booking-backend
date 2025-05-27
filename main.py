@@ -39,6 +39,8 @@ class BookingData(BaseModel):
     infants: int
     excursion_title: str | None = None
     date: str
+    start_date: str | None = None
+    end_date: str | None = None
     total_price: float
     pickup_location: str | None = None
     supplier_id: int
@@ -48,15 +50,20 @@ class BookingData(BaseModel):
 
 @app.post("/api/pay")
 def process_payment(booking: BookingData, db: Session = Depends(get_db)):
-    print(">>> Получен payload:")
-    print(booking.dict())
+    booking_id = int(datetime.utcnow().timestamp())
+
+    total_people = booking.adults + booking.children + booking.infants if booking.booking_type == "excursion" else 1
+    date_obj = datetime.strptime(booking.date, "%Y-%m-%d").date() if booking.date else None
+    date_from_obj = datetime.strptime(booking.start_date, "%Y-%m-%d").date() if booking.start_date else None
+    date_to_obj = datetime.strptime(booking.end_date, "%Y-%m-%d").date() if booking.end_date else None
+
     booking_entry = ConfirmedBooking(
-        booking_id=int(datetime.utcnow().timestamp()),
+        booking_id=booking_id,
         contact_method=booking.contact_method,
         language=booking.language,
-        people_count=booking.adults + booking.children + booking.infants,
-        date=datetime.strptime(booking.date, "%Y-%m-%d").date(),
-        total_price=booking.total_price,
+        people_count=total_people,
+        date=date_obj or date_from_obj,
+        total_price=booking.total_price or 0,
         pickup_location=booking.pickup_location,
         supplier_id=booking.supplier_id,
         booking_type=booking.booking_type,
@@ -65,6 +72,16 @@ def process_payment(booking: BookingData, db: Session = Depends(get_db)):
     db.add(booking_entry)
     db.commit()
     db.refresh(booking_entry)
+
+     # ➕ если бронируется машина — записываем диапазон в cars_reservation
+    if booking.booking_type == "car" and booking.car_id:
+        res = CarReservation(
+            car_id=booking.car_id,
+            start_date=date_from_obj,
+            end_date=date_to_obj
+        )
+        db.add(res)
+        db.commit()
 
     from email_utils import send_booking_email  # импорт функции (если в отдельном файле)
     send_booking_email(booking)
@@ -114,3 +131,16 @@ def get_bookings(db: Session = Depends(get_db)):
 @app.get("/excursion-reservations")
 def get_excursion_reservations(excursion_id: int, db: Session = Depends(get_db)):
     return db.query(ExcursionReservation).filter(ExcursionReservation.excursion_id == excursion_id).all()
+
+@app.get("/car-reservations")
+def get_car_reservations(car_id: int, db: Session = Depends(get_db)):
+    reservations = db.query(CarReservation).filter(CarReservation.car_id == car_id).all()
+    dates = []
+
+    for r in reservations:
+        current = r.start_date
+        while current <= r.end_date:
+            dates.append(current.strftime("%Y-%m-%d"))
+            current += timedelta(days=1)
+
+    return dates
