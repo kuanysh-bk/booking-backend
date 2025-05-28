@@ -158,3 +158,67 @@ def get_car(car_id: int, db: Session = Depends(get_db)):
         "supplier_id": car.supplier_id,
         "supplier": {"id": car.supplier.id, "name": car.supplier.name} if car.supplier else None
     }
+
+
+# === Admin login & content management ===
+
+from fastapi import Request, HTTPException
+from models import User, Excursion, Car
+from auth import create_access_token, get_current_user
+
+@app.post("/api/admin/login")
+async def admin_login(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    user = db.query(User).filter(User.email == data["email"]).first()
+    if not user or user.password_hash != data["password"]:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_access_token({"sub": str(user.id)})
+    return {"token": token, "is_superuser": user.is_superuser}
+
+
+@app.get("/api/admin/excursions")
+def admin_excursions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Excursion).filter(Excursion.operator_id == user.supplier_id).all()
+
+@app.get("/api/admin/cars")
+def admin_cars(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Car).filter(Car.supplier_id == user.supplier_id).all()
+
+@app.get("/api/admin/bookings")
+def admin_bookings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(ConfirmedBooking).filter(ConfirmedBooking.supplier_id == user.supplier_id).all()
+
+
+# === Superuser panel ===
+
+@app.get("/api/super/users")
+def super_list_users(current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    return db.query(User).all()
+
+@app.post("/api/super/users")
+async def super_add_user(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    user = User(email=data["email"], password_hash="123", supplier_id=data["supplier_id"])
+    db.add(user)
+    db.commit()
+    return {"ok": True}
+
+@app.get("/api/super/suppliers")
+def super_list_suppliers(current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    return db.query(Supplier).all()
+
+@app.post("/api/super/suppliers")
+async def super_add_supplier(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    data = await request.json()
+    supplier = Supplier(name=data["name"], supplier_type=data["type"])
+    db.add(supplier)
+    db.commit()
+    return {"ok": True}

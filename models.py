@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 from database import Base
+import enum
 
 class ConfirmedBooking(Base):
     __tablename__ = "confirmed_bookings"
@@ -90,3 +91,23 @@ class ExcursionReservation(Base):
     id = Column(Integer, primary_key=True, index=True)
     excursion_id = Column(Integer, ForeignKey("excursions.id"))
     date = Column(Date)
+
+
+class SupplierType(str, enum.Enum):
+    tour = "tour"
+    car = "car"
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    type = Column(Enum(SupplierType))
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True)
+    password_hash = Column(String)
+    is_superuser = Column(Boolean, default=False)
+    supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
+    supplier = relationship("Supplier")
