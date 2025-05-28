@@ -92,16 +92,9 @@ class ExcursionReservation(Base):
     excursion_id = Column(Integer, ForeignKey("excursions.id"))
     date = Column(Date)
 
-
 class SupplierType(str, enum.Enum):
     tour = "tour"
     car = "car"
-
-class Supplier(Base):
-    __tablename__ = "suppliers"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    type = Column(Enum(SupplierType))
 
 class User(Base):
     __tablename__ = "users"
