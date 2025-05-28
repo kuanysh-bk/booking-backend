@@ -29,6 +29,7 @@ class Supplier(Base):
     email = Column(String)
     logo_url = Column(String)
     supplier_type = Column(String, nullable=False)  # "excursion", "car", или "both"
+    address = Column(String, nullable=True)  # Добавлено поле адреса
 
     excursions = relationship("Excursion", back_populates="operator")
     cars = relationship("Car", back_populates="supplier")
