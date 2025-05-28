@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from database import SessionLocal, engine
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
