@@ -224,11 +224,21 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
     return {"ok": True}
 
 @app.post("/api/admin/change-password")
-async def change_password(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def change_password(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from models import User
+    from auth import decode_token
+
     data = await request.json()
     new_password = data.get("password")
     if not new_password or len(new_password) < 4:
         raise HTTPException(status_code=400, detail="Invalid password")
-    current.password_hash = new_password
+
+    # ✅ Извлекаем user ID из токена
+    user_id = decode_token(token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password_hash = new_password
     db.commit()
     return {"status": "ok"}
