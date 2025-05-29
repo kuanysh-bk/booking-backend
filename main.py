@@ -222,3 +222,13 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
     db.add(supplier)
     db.commit()
     return {"ok": True}
+
+@app.post("/api/admin/change-password")
+async def change_password(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    data = await request.json()
+    new_password = data.get("password")
+    if not new_password or len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="Invalid password")
+    current.password_hash = new_password
+    db.commit()
+    return {"status": "ok"}
