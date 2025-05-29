@@ -164,7 +164,7 @@ def get_car(car_id: int, db: Session = Depends(get_db)):
 
 from fastapi import Request, HTTPException
 from models import User, Excursion, Car
-from auth import create_access_token, get_current_user
+from auth import create_access_token, get_current_user, oauth2_scheme
 
 @app.post("/api/admin/login")
 async def admin_login(request: Request, db: Session = Depends(get_db)):
