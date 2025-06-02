@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from models import User
-from datetime import datetime, timedelta, get_db
+from datetime import datetime, timedelta
+from database import get_db
 
 SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
