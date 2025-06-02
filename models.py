@@ -50,7 +50,7 @@ class Excursion(Base):
     image_urls = Column(String)
     operator_id = Column(Integer, ForeignKey("suppliers.id"))
 
-    operator = relationship("Supplier", back_populates="excursions")
+    supplier = relationship("Supplier", back_populates="excursions")
 
 class Car(Base):
     __tablename__ = "cars"
