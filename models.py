@@ -20,19 +20,17 @@ class ConfirmedBooking(Base):
 
     supplier = relationship("Supplier")
 
-
 class Supplier(Base):
     __tablename__ = "suppliers"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    phone = Column(String)
     email = Column(String)
+    phone = Column(String)
+    address = Column(String)
+    supplier_type = Column(String)
     logo_url = Column(String)
-    supplier_type = Column(String, nullable=False)  # "excursion", "car", или "both"
-    address = Column(String, nullable=True)  # Добавлено поле адреса
 
-    excursions = relationship("Excursion", back_populates="operator")
+    excursions = relationship("Excursion", back_populates="supplier")
     cars = relationship("Car", back_populates="supplier")
 
 class Excursion(Base):
@@ -98,9 +96,11 @@ class SupplierType(str, enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
     password_hash = Column(String)
     is_superuser = Column(Boolean, default=False)
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
+    current_token = Column(String, nullable=True)
+
     supplier = relationship("Supplier")

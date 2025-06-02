@@ -1,12 +1,21 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from database import SessionLocal, engine
-from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation
+from database import SessionLocal, engine, get_db
+from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation, User, Base
 from datetime import datetime, timedelta
+#from auth import create_access_token, get_current_user, oauth2_scheme, decode_token
+from auth import router as auth_router, SECRET_KEY, ALGORITHM, decode_token
 
+from jose import JWTError, jwt
+#from auth import router as auth_router, SECRET_KEY, ALGORITHM
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
+
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from models import Base
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -162,10 +170,6 @@ def get_car(car_id: int, db: Session = Depends(get_db)):
 
 # === Admin login & content management ===
 
-from fastapi import Request, HTTPException
-from models import User, Excursion, Car
-from auth import create_access_token, get_current_user, oauth2_scheme
-
 @app.post("/api/admin/login")
 async def admin_login(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
@@ -225,8 +229,6 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
 
 @app.post("/api/admin/change-password")
 async def change_password(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    from models import User
-    from auth import decode_token
 
     data = await request.json()
     new_password = data.get("password")
@@ -242,3 +244,17 @@ async def change_password(request: Request, token: str = Depends(oauth2_scheme),
     user.password_hash = new_password
     db.commit()
     return {"status": "ok"}
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = int(payload.get("sub"))
+        if user_id is None:
+            raise HTTPException(status_code=401)
+    except JWTError:
+        raise HTTPException(status_code=401)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or user.current_token != token:
+        raise HTTPException(status_code=401)
+    return user
