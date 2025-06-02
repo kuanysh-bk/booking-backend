@@ -240,3 +240,23 @@ async def change_password(request: Request, token: str = Depends(oauth2_scheme),
     db.commit()
     return {"status": "ok"}
 
+@app.put("/api/super/users/{user_id}")
+async def super_update_user(user_id: int, request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    data = await request.json()
+
+    if "email" in data:
+        user.email = data["email"]
+    if "password" in data and data["password"]:
+        user.password_hash = hash_password(data["password"])
+    if "supplier_id" in data:
+        user.supplier_id = data["supplier_id"]
+
+    db.commit()
+    return {"ok": True}
