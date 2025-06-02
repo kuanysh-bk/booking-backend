@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from database import SessionLocal, engine, get_db
+from database import SessionLocal, engine
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation, User, Base
 from datetime import datetime, timedelta
 #from auth import create_access_token, get_current_user, oauth2_scheme, decode_token

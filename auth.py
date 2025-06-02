@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from database import get_db
+from main import get_db
 from models import User
 from datetime import datetime, timedelta
 
