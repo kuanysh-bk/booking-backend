@@ -201,7 +201,7 @@ async def super_add_user(request: Request, current: User = Depends(get_current_u
     if not current.is_superuser:
         raise HTTPException(status_code=403)
     data = await request.json()
-    user = User(email=data["email"], password_hash=hash_password(data.get("password", "123")),, supplier_id=data["supplier_id"])
+    user = User(email=data["email"], password_hash=hash_password(data.get("password", "123")), supplier_id=data["supplier_id"])
     db.add(user)
     db.commit()
     return {"ok": True}
