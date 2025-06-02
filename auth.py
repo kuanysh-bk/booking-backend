@@ -4,6 +4,15 @@ from sqlalchemy.orm import Session
 from models import User
 from datetime import datetime, timedelta
 from database import get_db
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
@@ -25,7 +34,7 @@ def decode_token(token: str):
 async def admin_login(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     user = db.query(User).filter(User.email == data["email"]).first()
-    if not user or user.password_hash != data["password"]:
+    if not user or not verify_password(data["password"], user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(data={"sub": str(user.id)})

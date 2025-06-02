@@ -5,11 +5,9 @@ from sqlalchemy.orm import Session, joinedload
 from database import SessionLocal, engine, get_db
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation, User, Base
 from datetime import datetime, timedelta
-#from auth import create_access_token, get_current_user, oauth2_scheme, decode_token
-from auth import router as auth_router, SECRET_KEY, ALGORITHM, decode_token
+from auth import router as auth_router, SECRET_KEY, ALGORITHM, decode_token, hash_password
 
 from jose import JWTError, jwt
-#from auth import router as auth_router, SECRET_KEY, ALGORITHM
 from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -203,7 +201,7 @@ async def super_add_user(request: Request, current: User = Depends(get_current_u
     if not current.is_superuser:
         raise HTTPException(status_code=403)
     data = await request.json()
-    user = User(email=data["email"], password_hash="123", supplier_id=data["supplier_id"])
+    user = User(email=data["email"], password_hash=hash_password(data.get("password", "123")),, supplier_id=data["supplier_id"])
     db.add(user)
     db.commit()
     return {"ok": True}
@@ -238,7 +236,7 @@ async def change_password(request: Request, token: str = Depends(oauth2_scheme),
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.password_hash = new_password
+    user.password_hash = hash_password(new_password)
     db.commit()
     return {"status": "ok"}
 
