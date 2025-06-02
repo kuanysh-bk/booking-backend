@@ -24,3 +24,10 @@ Base = declarative_base()
 # Автоматическое создание таблиц при запуске
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation
 Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

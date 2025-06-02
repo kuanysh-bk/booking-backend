@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from database import SessionLocal, engine
+from database import SessionLocal, engine, get_db
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation, User, Base
 from datetime import datetime, timedelta
 #from auth import create_access_token, get_current_user, oauth2_scheme, decode_token
@@ -26,13 +26,6 @@ app.add_middleware(
 )
 
 Base.metadata.create_all(bind=engine)
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 class BookingData(BaseModel):
     firstName: str
@@ -169,15 +162,19 @@ def get_car(car_id: int, db: Session = Depends(get_db)):
 
 
 # === Admin login & content management ===
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: int = int(payload.get("sub"))
+        if user_id is None:
+            raise HTTPException(status_code=401)
+    except JWTError:
+        raise HTTPException(status_code=401)
 
-@app.post("/api/admin/login")
-async def admin_login(request: Request, db: Session = Depends(get_db)):
-    data = await request.json()
-    user = db.query(User).filter(User.email == data["email"]).first()
-    if not user or user.password_hash != data["password"]:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": str(user.id)})
-    return {"token": token, "is_superuser": user.is_superuser}
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or user.current_token != token:
+        raise HTTPException(status_code=401)
+    return user
 
 
 @app.get("/api/admin/excursions")
@@ -245,16 +242,3 @@ async def change_password(request: Request, token: str = Depends(oauth2_scheme),
     db.commit()
     return {"status": "ok"}
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = int(payload.get("sub"))
-        if user_id is None:
-            raise HTTPException(status_code=401)
-    except JWTError:
-        raise HTTPException(status_code=401)
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None or user.current_token != token:
-        raise HTTPException(status_code=401)
-    return user
