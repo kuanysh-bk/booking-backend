@@ -206,11 +206,17 @@ async def super_add_user(request: Request, current: User = Depends(get_current_u
     db.commit()
     return {"ok": True}
 
+@app.get("/api/super/suppliers/{supplier_id}")
 @app.get("/api/super/suppliers")
-def super_list_suppliers(current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def super_get_supplier(supplier_id: int = None, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current.is_superuser:
         raise HTTPException(status_code=403)
-    return db.query(Supplier).all()
+    if supplier_id is None:
+        return db.query(Supplier).all()
+    supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return supplier
 
 @app.post("/api/super/suppliers")
 async def super_add_supplier(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
