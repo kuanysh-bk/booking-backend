@@ -222,6 +222,33 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
     db.commit()
     return {"ok": True}
 
+@app.put("/api/super/suppliers/{supplier_id}")
+async def super_update_supplier(supplier_id: int, request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    data = await request.json()
+    supplier.name = data.get("name", supplier.name)
+    supplier.phone = data.get("phone", supplier.phone)
+    supplier.email = data.get("email", supplier.email)
+    supplier.supplier_type = data.get("supplier_type", supplier.supplier_type)
+    supplier.address = data.get("address", supplier.address)
+    db.commit()
+    return {"ok": True}
+
+@app.delete("/api/super/suppliers/{supplier_id}")
+def super_delete_supplier(supplier_id: int, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    db.delete(supplier)
+    db.commit()
+    return {"ok": True}
+
 @app.post("/api/admin/change-password")
 async def change_password(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
 
