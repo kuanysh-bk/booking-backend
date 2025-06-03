@@ -217,7 +217,7 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
     if not current.is_superuser:
         raise HTTPException(status_code=403)
     data = await request.json()
-    supplier = Supplier(name=data["name"], supplier_type=data["type"])
+    supplier = Supplier(name=data["name"], supplier_type=data["supplier_type"], phone=data.get("phone"), email=data.get("email"), address=data.get("address"))
     db.add(supplier)
     db.commit()
     return {"ok": True}
