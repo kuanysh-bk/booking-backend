@@ -260,3 +260,14 @@ async def super_update_user(user_id: int, request: Request, current: User = Depe
 
     db.commit()
     return {"ok": True}
+
+@app.delete("/api/super/users/{user_id}")
+def super_delete_user(user_id: int, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser:
+        raise HTTPException(status_code=403)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"ok": True}
