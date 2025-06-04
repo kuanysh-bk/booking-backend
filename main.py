@@ -176,16 +176,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 
 @app.get("/api/admin/excursions")
-def admin_excursions(supplierId: int, db: Session = Depends(get_db)):
-    return db.query(Excursion).filter(Excursion.operator_id == supplierId).all()
+def admin_excursions(operator_id: int, db: Session = Depends(get_db)):
+    return db.query(Excursion).filter(Excursion.operator_id == operator_id).all()
 
 @app.get("/api/admin/cars")
-def admin_cars(supplierId: int, db: Session = Depends(get_db)):
-    return db.query(Car).filter(Car.supplier_id == supplierId).all()
+def admin_cars(supplier_id: int, db: Session = Depends(get_db)):
+    return db.query(Car).filter(Car.supplier_id == supplier_id).all()
 
 @app.get("/api/admin/bookings")
-def admin_bookings(supplierId: int, db: Session = Depends(get_db)):
-    return db.query(ConfirmedBooking).filter(ConfirmedBooking.supplier_id == supplierId).all()
+def admin_bookings(supplier_id: int, db: Session = Depends(get_db)):
+    return db.query(ConfirmedBooking).filter(ConfirmedBooking.supplier_id == supplier_id).all()
 
 
 # === Superuser panel ===
