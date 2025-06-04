@@ -187,6 +187,26 @@ def admin_cars(supplier_id: int, db: Session = Depends(get_db)):
 def admin_bookings(supplier_id: int, db: Session = Depends(get_db)):
     return db.query(ConfirmedBooking).filter(ConfirmedBooking.supplier_id == supplier_id).all()
 
+@app.get("/api/suppliers/{supplier_id}")
+@app.get("/api/suppliers")
+def get_supplier(
+    supplier_id: int = None,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current.is_superuser:
+        # Суперюзер может смотреть любого поставщика
+        if supplier_id is None:
+            return db.query(Supplier).all()
+        supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
+    else:
+        # Обычный пользователь может смотреть только себя
+        supplier = db.query(Supplier).filter(Supplier.id == current.supplier_id).first()
+        # Даже если передали supplier_id — игнорируем его
+
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return supplier
 
 # === Superuser panel ===
 
@@ -206,18 +226,6 @@ async def super_add_user(request: Request, current: User = Depends(get_current_u
     db.commit()
     return {"ok": True}
 
-@app.get("/api/super/suppliers/{supplier_id}")
-@app.get("/api/super/suppliers")
-def super_get_supplier(supplier_id: int = None, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not current.is_superuser:
-        raise HTTPException(status_code=403)
-    if supplier_id is None:
-        return db.query(Supplier).all()
-    supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
-    if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found")
-    return supplier
-
 @app.post("/api/super/suppliers")
 async def super_add_supplier(request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not current.is_superuser:
@@ -228,13 +236,21 @@ async def super_add_supplier(request: Request, current: User = Depends(get_curre
     db.commit()
     return {"ok": True}
 
-@app.put("/api/super/suppliers/{supplier_id}")
-async def super_update_supplier(supplier_id: int, request: Request, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not current.is_superuser:
-        raise HTTPException(status_code=403)
+@app.put("/api/suppliers/{supplier_id}")
+async def update_supplier(
+    supplier_id: int,
+    request: Request,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Обычный пользователь может обновлять только своего поставщика
+    if not current.is_superuser and current.supplier_id != supplier_id:
+        raise HTTPException(status_code=403, detail="Not allowed to edit this supplier")
+
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
+
     data = await request.json()
     supplier.name = data.get("name", supplier.name)
     supplier.phone = data.get("phone", supplier.phone)
@@ -242,6 +258,7 @@ async def super_update_supplier(supplier_id: int, request: Request, current: Use
     supplier.supplier_type = data.get("supplier_type", supplier.supplier_type)
     supplier.address = data.get("address", supplier.address)
     db.commit()
+
     return {"ok": True}
 
 @app.delete("/api/super/suppliers/{supplier_id}")
