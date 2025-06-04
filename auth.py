@@ -40,4 +40,4 @@ async def admin_login(request: Request, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id)})
     user.current_token = access_token
     db.commit()
-    return {"token": access_token, "is_superuser": user.is_superuser}
+    return {"token": access_token, "is_superuser": user.is_superuser, "supplier_id": user.supplier_id}  
