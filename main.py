@@ -224,6 +224,32 @@ def admin_add_car(car: CarCreate, current: User = Depends(get_current_user), db:
     db.refresh(db_car)
     return {"id": db_car.id}
 
+@app.put("/api/admin/cars/{car_id}")
+def update_car(car_id: int, updated: CarCreate, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    car = db.query(Car).filter(Car.id == car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    if not current.is_superuser and current.supplier_id != car.supplier_id:
+        raise HTTPException(status_code=403)
+
+    for field, value in updated.dict().items():
+        setattr(car, field, value)
+    db.commit()
+    return {"ok": True}
+
+
+@app.delete("/api/admin/cars/{car_id}")
+def delete_car(car_id: int, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    car = db.query(Car).filter(Car.id == car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    if not current.is_superuser and current.supplier_id != car.supplier_id:
+        raise HTTPException(status_code=403)
+    db.delete(car)
+    db.commit()
+    return {"ok": True}
+
+
 @app.post("/api/admin/excursions")
 def admin_add_excursion(
     excursion: ExcursionCreate,
@@ -238,6 +264,31 @@ def admin_add_excursion(
     db.commit()
     db.refresh(db_excursion)
     return {"id": db_excursion.id}
+
+@app.put("/api/admin/excursions/{excursion_id}")
+def update_excursion(excursion_id: int, updated: ExcursionCreate, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    excursion = db.query(Excursion).filter(Excursion.id == excursion_id).first()
+    if not excursion:
+        raise HTTPException(status_code=404, detail="Excursion not found")
+    if not current.is_superuser and current.supplier_id != excursion.operator_id:
+        raise HTTPException(status_code=403)
+
+    for field, value in updated.dict().items():
+        setattr(excursion, field, value)
+    db.commit()
+    return {"ok": True}
+
+
+@app.delete("/api/admin/excursions/{excursion_id}")
+def delete_excursion(excursion_id: int, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    excursion = db.query(Excursion).filter(Excursion.id == excursion_id).first()
+    if not excursion:
+        raise HTTPException(status_code=404, detail="Excursion not found")
+    if not current.is_superuser and current.supplier_id != excursion.operator_id:
+        raise HTTPException(status_code=403)
+    db.delete(excursion)
+    db.commit()
+    return {"ok": True}
 
 
 @app.get("/api/admin/bookings")
