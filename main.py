@@ -205,6 +205,8 @@ def admin_add_car(car: CarCreate, current: User = Depends(get_current_user), db:
         raise HTTPException(status_code=403)
 
     db_car = Car(**car.dict())
+    print("car dict:", car.dict())
+
     db.add(db_car)
     db.commit()
     db.refresh(db_car)
