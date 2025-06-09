@@ -46,6 +46,22 @@ class BookingData(BaseModel):
     booking_type: str  # "excursion" или "car"
     car_id: int | None = None  # добавлено
 
+class CarCreate(BaseModel):
+    brand: str
+    model: str
+    color: str
+    seats: int
+    price_per_day: float
+    car_type: str
+    transmission: str
+    has_air_conditioning: bool
+    year: int
+    fuel_type: str
+    engine_capacity: float
+    mileage: int
+    drive_type: str
+    supplier_id: int
+
 
 @app.post("/api/pay")
 def process_payment(booking: BookingData, db: Session = Depends(get_db)):
@@ -182,6 +198,17 @@ def admin_excursions(operator_id: int, db: Session = Depends(get_db)):
 @app.get("/api/admin/cars")
 def admin_cars(supplier_id: int, db: Session = Depends(get_db)):
     return db.query(Car).filter(Car.supplier_id == supplier_id).all()
+
+@app.post("/api/admin/cars")
+def admin_add_car(car: CarCreate, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current.is_superuser and current.supplier_id != car.supplier_id:
+        raise HTTPException(status_code=403)
+
+    db_car = Car(**car.dict())
+    db.add(db_car)
+    db.commit()
+    db.refresh(db_car)
+    return {"id": db_car.id}
 
 @app.get("/api/admin/bookings")
 def admin_bookings(supplier_id: int, db: Session = Depends(get_db)):
