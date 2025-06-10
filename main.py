@@ -45,6 +45,7 @@ class BookingData(BaseModel):
     supplier_id: int
     booking_type: str  # "excursion" или "car"
     car_id: int | None = None  # добавлено
+    excursion_id: int | None = None
 
 class CarCreate(BaseModel):
     brand: str
@@ -87,15 +88,21 @@ def process_payment(booking: BookingData, db: Session = Depends(get_db)):
 
     booking_entry = ConfirmedBooking(
         booking_id=booking_id,
+        first_name=booking.firstName,
+        last_name=booking.lastName,
+        phone=booking.phone,
+        email=booking.email,
+        document_number=booking.document_number,
+        pickup_location=booking.pickup_location,
         contact_method=booking.contact_method,
         language=booking.language,
         people_count=total_people,
         date=date_obj or date_from_obj,
         total_price=booking.total_price or 0,
-        pickup_location=booking.pickup_location,
         supplier_id=booking.supplier_id,
         booking_type=booking.booking_type,
-        car_id=booking.car_id  # добавлено
+        excursion_id=excursion_id if booking.booking_type == "excursion" else None,
+        car_id=booking.car_id
     )
     db.add(booking_entry)
     db.commit()

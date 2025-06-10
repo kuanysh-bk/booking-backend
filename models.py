@@ -8,17 +8,27 @@ class ConfirmedBooking(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     booking_id = Column(Integer, unique=True, index=True)
+
+    first_name = Column(String)
+    last_name = Column(String)
+    phone = Column(String)
+    email = Column(String)
+    document_number = Column(String)
+    pickup_location = Column(String)
+    
     contact_method = Column(String)
     language = Column(String)
     people_count = Column(Integer)
     date = Column(Date)
     total_price = Column(Float)
-    pickup_location = Column(String)
+
     supplier_id = Column(Integer, ForeignKey("suppliers.id"))
+    excursion_id = Column(Integer, ForeignKey("excursions.id"), nullable=True)  # <== добавлено
+    car_id = Column(Integer, ForeignKey("cars.id"), nullable=True)
     booking_type = Column(String)  # "excursion" или "car"
-    car_id = Column(Integer, ForeignKey("cars.id"), nullable=True)  # добавлено
 
     supplier = relationship("Supplier")
+
 
 class Supplier(Base):
     __tablename__ = "suppliers"
