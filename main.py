@@ -101,7 +101,7 @@ def process_payment(booking: BookingData, db: Session = Depends(get_db)):
         total_price=booking.total_price or 0,
         supplier_id=booking.supplier_id,
         booking_type=booking.booking_type,
-        excursion_id=excursion_id if booking.booking_type == "excursion" else None,
+        excursion_id=booking.excursion_id if booking.booking_type == "excursion" else None,
         car_id=booking.car_id
     )
     db.add(booking_entry)
