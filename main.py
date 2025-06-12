@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from database import SessionLocal, engine, get_db
 from models import ConfirmedBooking, Supplier, Excursion, Car, CarReservation, ExcursionReservation, User, Base
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from auth import router as auth_router, SECRET_KEY, ALGORITHM, decode_token, hash_password
 
 from jose import JWTError, jwt
@@ -75,6 +75,17 @@ class ExcursionCreate(BaseModel):
     child_price: float
     infant_price: float
     operator_id: int
+
+
+class CarReservationCreate(BaseModel):
+    car_id: int
+    start_date: date
+    end_date: date
+
+
+class ExcursionReservationCreate(BaseModel):
+    excursion_id: int
+    date: date
 
 
 @app.post("/api/pay")
@@ -179,6 +190,37 @@ def get_car_reservations(car_id: int, db: Session = Depends(get_db)):
             current += timedelta(days=1)
 
     return dates
+
+@app.get("/excursions/{excursion_id}")
+def get_excursion(excursion_id: int, db: Session = Depends(get_db)):
+    excursion = (
+        db.query(Excursion)
+        .options(joinedload(Excursion.supplier))
+        .filter(Excursion.id == excursion_id)
+        .first()
+    )
+    if not excursion:
+        raise HTTPException(status_code=404, detail="Excursion not found")
+    return {
+        "id": excursion.id,
+        "title": excursion.title,
+        "description_en": excursion.description_en,
+        "description_ru": excursion.description_ru,
+        "duration": excursion.duration,
+        "location_en": excursion.location_en,
+        "location_ru": excursion.location_ru,
+        "price": excursion.price,
+        "adult_price": excursion.adult_price,
+        "child_price": excursion.child_price,
+        "infant_price": excursion.infant_price,
+        "operator_id": excursion.operator_id,
+        "supplier": {
+            "id": excursion.supplier.id,
+            "name": excursion.supplier.name,
+        }
+        if excursion.supplier
+        else None,
+    }
 
 @app.get("/cars/{car_id}")
 def get_car(car_id: int, db: Session = Depends(get_db)):
@@ -301,6 +343,82 @@ def delete_excursion(excursion_id: int, current: User = Depends(get_current_user
 @app.get("/api/admin/bookings")
 def admin_bookings(supplier_id: int, db: Session = Depends(get_db)):
     return db.query(ConfirmedBooking).filter(ConfirmedBooking.supplier_id == supplier_id).all()
+
+
+@app.post("/api/admin/car-reservations")
+def add_car_reservation(
+    reservation: CarReservationCreate,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    car = db.query(Car).filter(Car.id == reservation.car_id).first()
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    if not current.is_superuser and car.supplier_id != current.supplier_id:
+        raise HTTPException(status_code=403)
+
+    db_res = CarReservation(**reservation.dict())
+    db.add(db_res)
+    db.commit()
+    db.refresh(db_res)
+    return {"id": db_res.id}
+
+
+@app.post("/api/admin/excursion-reservations")
+def add_excursion_reservation(
+    reservation: ExcursionReservationCreate,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    excursion = db.query(Excursion).filter(Excursion.id == reservation.excursion_id).first()
+    if not excursion:
+        raise HTTPException(status_code=404, detail="Excursion not found")
+    if not current.is_superuser and excursion.operator_id != current.supplier_id:
+        raise HTTPException(status_code=403)
+
+    db_res = ExcursionReservation(**reservation.dict())
+    db.add(db_res)
+    db.commit()
+    db.refresh(db_res)
+    return {"id": db_res.id}
+
+
+@app.delete("/api/admin/car-reservations/{reservation_id}")
+def delete_car_reservation(
+    reservation_id: int,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    reservation = db.query(CarReservation).filter(CarReservation.id == reservation_id).first()
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    car = db.query(Car).filter(Car.id == reservation.car_id).first()
+    if not current.is_superuser and car and car.supplier_id != current.supplier_id:
+        raise HTTPException(status_code=403)
+    db.delete(reservation)
+    db.commit()
+    return {"ok": True}
+
+
+@app.delete("/api/admin/excursion-reservations/{reservation_id}")
+def delete_excursion_reservation(
+    reservation_id: int,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    reservation = (
+        db.query(ExcursionReservation)
+        .filter(ExcursionReservation.id == reservation_id)
+        .first()
+    )
+    if not reservation:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    excursion = db.query(Excursion).filter(Excursion.id == reservation.excursion_id).first()
+    if not current.is_superuser and excursion and excursion.operator_id != current.supplier_id:
+        raise HTTPException(status_code=403)
+    db.delete(reservation)
+    db.commit()
+    return {"ok": True}
 
 @app.get("/api/suppliers/{supplier_id}")
 @app.get("/api/suppliers")
