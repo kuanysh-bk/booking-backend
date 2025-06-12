@@ -181,15 +181,8 @@ def get_excursion_reservations(excursion_id: int, db: Session = Depends(get_db))
 @app.get("/car-reservations")
 def get_car_reservations(car_id: int, db: Session = Depends(get_db)):
     reservations = db.query(CarReservation).filter(CarReservation.car_id == car_id).all()
-    dates = []
+    return [{"id": r.id, "start_date": r.start_date.isoformat(), "end_date": r.end_date.isoformat()} for r in reservations]
 
-    for r in reservations:
-        current = r.start_date
-        while current <= r.end_date:
-            dates.append(current.strftime("%Y-%m-%d"))
-            current += timedelta(days=1)
-
-    return dates
 
 @app.get("/excursions/{excursion_id}")
 def get_excursion(excursion_id: int, db: Session = Depends(get_db)):
