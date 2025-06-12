@@ -215,6 +215,37 @@ def get_excursion(excursion_id: int, db: Session = Depends(get_db)):
         else None,
     }
 
+@app.get("/excursions/{excursion_id}")
+def get_excursion(excursion_id: int, db: Session = Depends(get_db)):
+    excursion = (
+        db.query(Excursion)
+        .options(joinedload(Excursion.supplier))
+        .filter(Excursion.id == excursion_id)
+        .first()
+    )
+    if not excursion:
+        raise HTTPException(status_code=404, detail="Excursion not found")
+    return {
+        "id": excursion.id,
+        "title": excursion.title,
+        "description_en": excursion.description_en,
+        "description_ru": excursion.description_ru,
+        "duration": excursion.duration,
+        "location_en": excursion.location_en,
+        "location_ru": excursion.location_ru,
+        "price": excursion.price,
+        "adult_price": excursion.adult_price,
+        "child_price": excursion.child_price,
+        "infant_price": excursion.infant_price,
+        "operator_id": excursion.operator_id,
+        "supplier": {
+            "id": excursion.supplier.id,
+            "name": excursion.supplier.name,
+        }
+        if excursion.supplier
+        else None,
+    }
+
 @app.get("/cars/{car_id}")
 def get_car(car_id: int, db: Session = Depends(get_db)):
     car = db.query(Car).options(joinedload(Car.supplier)).filter(Car.id == car_id).first()
